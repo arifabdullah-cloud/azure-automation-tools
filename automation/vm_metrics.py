@@ -26,7 +26,7 @@ def get_cpu_usage(resource_id):
     for metric in response.metrics:
         for time_series in metric.timeseries:
             for data in time_series.data:
-                print(f"Timestamp: {data.time_stamp}, CPU: {data.average}")
+                print(f"Timestamp: {data.timestamp}, CPU: {data.average}")
                 
 if __name__ == "__main__":
     resource_id = "/subscriptions/23ff688d-01fd-4a9f-b865-14fd60150c77/resourceGroups/test-vm-automation_group/providers/Microsoft.Compute/virtualMachines/test-vm-automation"
