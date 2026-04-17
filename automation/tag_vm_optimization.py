@@ -5,7 +5,7 @@ from azure.mgmt.compute import ComputeManagementClient
 from azure.monitor.query import MetricsQueryClient
 
 SUBSCRIPTION_ID = "23ff688d-01fd-4a9f-b865-14fd60150c77"
-DRY_RUN = True
+DRY_RUN = False
 
 
 def get_credential():
