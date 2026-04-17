@@ -15,19 +15,6 @@ def get_metrics_client():
     return MetricsQueryClient(credential)
 
 
-def calculate_average(cpu_values):
-    valid = [v for v in cpu_values if v is not None]
-    return sum(valid) / len(valid) if valid else 0
-
-
-def classify_vm(avg_cpu):
-    if avg_cpu < 5:
-        return "IDLE"
-    if avg_cpu < 20:
-        return "LOW_USAGE"
-    return "ACTIVE"
-
-
 def get_cpu_usage(resource_id):
     client = get_metrics_client()
 
@@ -55,20 +42,40 @@ def get_cpu_usage(resource_id):
     return cpu_values
 
 
+def calculate_average(cpu_values):
+    if not cpu_values:
+        return None
+    return sum(cpu_values) / len(cpu_values)
+
+
+def classify_vm(avg_cpu):
+    if avg_cpu is None:
+        return "NO_DATA"
+    if avg_cpu < 5:
+        return "IDLE"
+    if avg_cpu < 20:
+        return "LOW_USAGE"
+    return "ACTIVE"
+
+
+def get_recommendation(status):
+    if status == "NO_DATA":
+        return "No recent CPU data available. VM may be stopped, newly started, or not yet emitting metrics."
+    if status == "IDLE":
+        return "Candidate for shutdown or scheduling."
+    if status == "LOW_USAGE":
+        return "Keep under observation for rightsizing or scheduling."
+    return "No action needed."
+
+
 def save_report(vm_name, resource_id, avg_cpu, status):
     report = {
         "generated_at_utc": datetime.utcnow().isoformat(),
         "vm_name": vm_name,
         "resource_id": resource_id,
-        "average_cpu_percent": round(avg_cpu, 2),
+        "average_cpu_percent": round(avg_cpu, 2) if avg_cpu is not None else None,
         "status": status,
-        "recommendation": (
-            "Candidate for shutdown or scheduling"
-            if status == "IDLE"
-            else "Keep under observation"
-            if status == "LOW_USAGE"
-            else "No action needed"
-        ),
+        "recommendation": get_recommendation(status),
     }
 
     with open("single_vm_report.json", "w") as f:
@@ -84,7 +91,7 @@ def main():
 
     print("\n--- SUMMARY ---")
     print(f"VM Name: {VM_NAME}")
-    print(f"Average CPU: {avg_cpu:.2f}%")
+    print(f"Average CPU: {avg_cpu:.2f}%" if avg_cpu is not None else "Average CPU: NO DATA")
     print(f"Status: {status}")
 
     save_report(VM_NAME, RESOURCE_ID, avg_cpu, status)
