@@ -48,9 +48,11 @@ def calculate_average(cpu_values):
     return sum(cpu_values) / len(cpu_values)
 
 
-def classify_vm(avg_cpu):
-    if avg_cpu is None:
+def classify_vm(avg_cpu, sample_count):
+    if sample_count == 0:
         return "NO_DATA"
+    if sample_count < 5:
+        return "INSUFFICIENT_DATA"
     if avg_cpu < 5:
         return "IDLE"
     if avg_cpu < 20:
@@ -61,6 +63,8 @@ def classify_vm(avg_cpu):
 def get_recommendation(status):
     if status == "NO_DATA":
         return "No recent CPU data available. VM may be stopped, newly started, or not yet emitting metrics."
+    if status == "INSUFFICIENT_DATA":
+        return "Not enough datapoints yet. Wait a few more minutes and rerun."
     if status == "IDLE":
         return "Candidate for shutdown or scheduling."
     if status == "LOW_USAGE":
@@ -68,12 +72,13 @@ def get_recommendation(status):
     return "No action needed."
 
 
-def save_report(vm_name, resource_id, avg_cpu, status):
+def save_report(vm_name, resource_id, avg_cpu, sample_count, status):
     report = {
         "generated_at_utc": datetime.utcnow().isoformat(),
         "vm_name": vm_name,
         "resource_id": resource_id,
         "average_cpu_percent": round(avg_cpu, 2) if avg_cpu is not None else None,
+        "sample_count": sample_count,
         "status": status,
         "recommendation": get_recommendation(status),
     }
@@ -87,14 +92,16 @@ def save_report(vm_name, resource_id, avg_cpu, status):
 def main():
     cpu_values = get_cpu_usage(RESOURCE_ID)
     avg_cpu = calculate_average(cpu_values)
-    status = classify_vm(avg_cpu)
+    sample_count = len(cpu_values)
+    status = classify_vm(avg_cpu, sample_count)
 
     print("\n--- SUMMARY ---")
     print(f"VM Name: {VM_NAME}")
+    print(f"Valid CPU samples: {sample_count}")
     print(f"Average CPU: {avg_cpu:.2f}%" if avg_cpu is not None else "Average CPU: NO DATA")
     print(f"Status: {status}")
 
-    save_report(VM_NAME, RESOURCE_ID, avg_cpu, status)
+    save_report(VM_NAME, RESOURCE_ID, avg_cpu, sample_count, status)
 
 
 if __name__ == "__main__":
