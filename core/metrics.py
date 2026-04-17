@@ -1,13 +1,16 @@
 from datetime import datetime, timedelta
 
 from core.azure_clients import get_metrics_client
+from core.config import CPU_LOOKBACK_MINUTES
 
 
-def get_cpu_usage(resource_id, minutes=30):
+def get_cpu_usage(resource_id, minutes=None):
     metrics_client = get_metrics_client()
 
+    lookback_minutes = minutes if minutes is not None else CPU_LOOKBACK_MINUTES
+
     end_time = datetime.utcnow()
-    start_time = end_time - timedelta(minutes=minutes)
+    start_time = end_time - timedelta(minutes=lookback_minutes)
 
     response = metrics_client.query_resource(
         resource_id,
