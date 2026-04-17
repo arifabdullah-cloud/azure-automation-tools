@@ -5,11 +5,19 @@ from core.vm_actions import stop_vm
 
 
 MIN_SAMPLE_COUNT = 10
+PROTECTION_TAG_NAME = "doNotShutdown"
+PROTECTION_TAG_VALUE = "true"
 
 
 def list_vms():
     compute_client = get_compute_client()
     return list(compute_client.virtual_machines.list_all())
+
+
+def is_protected_vm(vm):
+    tags = vm.tags or {}
+    value = tags.get(PROTECTION_TAG_NAME, "").lower()
+    return value == PROTECTION_TAG_VALUE
 
 
 def is_shutdown_candidate(status, sample_count):
@@ -36,6 +44,10 @@ def main():
         print(f"  Samples: {sample_count}")
         print(f"  Avg CPU: {round(avg_cpu, 2) if avg_cpu is not None else 'NO DATA'}")
         print(f"  Status: {status}")
+
+        if is_protected_vm(vm):
+            print(f"  Decision: SKIP (protected by tag {PROTECTION_TAG_NAME}=true)\n")
+            continue
 
         if is_shutdown_candidate(status, sample_count):
             print("  Decision: SHUTDOWN CANDIDATE")
