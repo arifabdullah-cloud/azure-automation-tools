@@ -1,8 +1,7 @@
 from core.azure_clients import get_compute_client
+from core.config import DRY_RUN
 from core.metrics import get_cpu_usage, calculate_average, classify_vm
 from core.tagging import apply_tags_to_vm
-
-DRY_RUN = False
 
 
 def list_vms():
