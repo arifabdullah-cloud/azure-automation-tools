@@ -1,12 +1,12 @@
 from core.azure_clients import get_compute_client
-from core.config import DRY_RUN
+from core.config import (
+    DRY_RUN,
+    MIN_SAMPLE_COUNT,
+    PROTECTION_TAG_NAME,
+    PROTECTION_TAG_VALUE,
+)
 from core.metrics import get_cpu_usage, calculate_average, classify_vm
 from core.vm_actions import stop_vm
-
-
-MIN_SAMPLE_COUNT = 10
-PROTECTION_TAG_NAME = "doNotShutdown"
-PROTECTION_TAG_VALUE = "true"
 
 
 def list_vms():
@@ -46,7 +46,7 @@ def main():
         print(f"  Status: {status}")
 
         if is_protected_vm(vm):
-            print(f"  Decision: SKIP (protected by tag {PROTECTION_TAG_NAME}=true)\n")
+            print(f"  Decision: SKIP (protected by tag {PROTECTION_TAG_NAME}={PROTECTION_TAG_VALUE})\n")
             continue
 
         if is_shutdown_candidate(status, sample_count):
