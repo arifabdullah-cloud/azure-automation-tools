@@ -31,7 +31,7 @@ jobs:
       - name: Run automation script
         env:
           AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          DRY_RUN: "true"
+          DRY_RUN: "false"
           CPU_LOOKBACK_MINUTES: "30"
           MIN_SAMPLE_COUNT: "10"
           PROTECTION_TAG_NAME: "doNotShutdown"
