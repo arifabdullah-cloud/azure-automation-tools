@@ -1,4 +1,4 @@
 azure-identity
 azure-mgmt-compute
-azure-monitor-query
+azure-monitor-query<2.0.0
 python-dotenv
