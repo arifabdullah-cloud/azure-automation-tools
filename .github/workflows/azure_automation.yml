@@ -53,7 +53,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           if [ -f shutdown_report.json ]; then
-            MESSAGE=$(cat shutdown_report.json)
+            MESSAGE=$(python -m automation.format_telegram_message)
           else
             MESSAGE="No shutdown_report.json file generated"
           fi
