@@ -6,6 +6,7 @@ from core.config import (
     PROTECTION_TAG_VALUE,
 )
 from core.metrics import get_cpu_usage, calculate_average, classify_vm
+from core.reporting import save_shutdown_report
 from core.vm_actions import stop_vm
 
 
@@ -33,6 +34,8 @@ def main():
 
     print(f"Found {len(vms)} VM(s).\n")
 
+    results = []
+
     for vm in vms:
         print(f"Analyzing VM: {vm.name}")
 
@@ -46,14 +49,29 @@ def main():
         print(f"  Status: {status}")
 
         if is_protected_vm(vm):
-            print(f"  Decision: SKIP (protected by tag {PROTECTION_TAG_NAME}={PROTECTION_TAG_VALUE})\n")
-            continue
-
-        if is_shutdown_candidate(status, sample_count):
-            print("  Decision: SHUTDOWN CANDIDATE")
+            decision = f"SKIP (protected by tag {PROTECTION_TAG_NAME}={PROTECTION_TAG_VALUE})"
+            print(f"  Decision: {decision}\n")
+        elif is_shutdown_candidate(status, sample_count):
+            decision = "SHUTDOWN CANDIDATE"
+            print(f"  Decision: {decision}")
             stop_vm(vm, dry_run=DRY_RUN)
         else:
-            print("  Decision: NO ACTION\n")
+            decision = "NO ACTION"
+            print(f"  Decision: {decision}\n")
+
+        results.append(
+            {
+                "vm_name": vm.name,
+                "resource_id": vm.id,
+                "sample_count": sample_count,
+                "average_cpu_percent": round(avg_cpu, 2) if avg_cpu is not None else None,
+                "status": status,
+                "decision": decision,
+                "dry_run": DRY_RUN,
+            }
+        )
+
+    save_shutdown_report(results)
 
 
 if __name__ == "__main__":
