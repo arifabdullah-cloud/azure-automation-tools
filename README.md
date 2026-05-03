@@ -1,58 +1,91 @@
 # Azure Automation Tools
 
-Practical Azure automation tools for cloud monitoring, utilization analysis, and operational tagging.
+End-to-end Azure automation system for VM utilization analysis, cost optimization, and safe operational control.
 
-This project focuses on building hands-on cloud engineering capabilities using Azure SDKs, Azure Monitor metrics, and Python-based automation.
+This project demonstrates real-world cloud engineering practices using:
+- Azure SDK (Compute + Monitor)
+- Python automation
+- GitHub Actions (scheduled execution)
+- Telegram notifications
+- Safe automation design patterns
 
 ---
 
 ## 🚀 Features
 
-- Discover Azure virtual machines in a subscription
-- Query CPU usage from Azure Monitor
-- Classify VMs based on recent utilization:
+### 🔍 Discovery & Monitoring
+
+- Discover Azure Virtual Machines across a subscription
+- Query CPU metrics from Azure Monitor
+- Analyze utilization over a configurable time window
+
+### 🧠 Decision Engine
+
+- Classify VMs based on utilization:
   - `NO_DATA`
   - `INSUFFICIENT_DATA`
   - `IDLE`
   - `LOW_USAGE`
   - `ACTIVE`
-- Generate JSON utilization reports
-- Apply optimization tags to Azure VMs
+- Configurable thresholds and lookback windows
+- Sample validation for reliable decisions
+
+### ⚙️ Automation & Actions
+
+- Tag VMs with optimization metadata:
+  - `optimizationStatus`
+  - `lastAnalyzedUtc`
+- Identify shutdown candidates safely
+- Execute **real VM shutdowns** (with dry-run support)
+- Protection override via tag:
+  - `doNotShutdown=true`
+
+### 📦 Reporting & Notification
+
+- Generate structured JSON reports
+- Upload reports as GitHub Actions artifacts
+- Send automation results via Telegram
+
+### ⏱️ Scheduling
+
+- Fully automated execution using GitHub Actions
+- Supports:
+  - scheduled runs (cron)
+  - manual trigger
 
 ---
 
-## 💡 Current Use Case
+## 💡 Use Case
 
-This project identifies underutilized Azure VMs based on CPU metrics and tags them with:
+This project identifies underutilized Azure VMs and enables:
 
-- `optimizationStatus`
-- `lastAnalyzedUtc`
-
-This forms the foundation for:
-
-- Cost optimization workflows
-- Scheduled shutdown systems
-- Rightsizing recommendations
-- AI-driven cloud operations
+- Automated cost optimization
+- Safe VM shutdown workflows
+- Operational visibility via notifications
+- Foundation for FinOps and AIOps systems
 
 ---
 
 ## 🏗️ Architecture
 
 ```text
-Azure Subscription
-    ↓
-VM Discovery (Azure Compute SDK)
-    ↓
-CPU Metrics Query (Azure Monitor)
-    ↓
+GitHub Actions (Scheduler)
+        ↓
+Python Automation (GitHub Runner)
+        ↓
+Azure SDK (Compute + Monitor)
+        ↓
+VM Discovery + Metrics Query
+        ↓
 Utilization Analysis
-    ↓
-Status Classification
-    ↓
-JSON Report / Azure Tag Update
+        ↓
+Decision Engine
+        ↓
+┌─────────────────────────────┬──────────────────────────────┐
+│ JSON Report (Artifact)      │ Telegram Notification        │
+│ Azure VM Tagging            │ VM Shutdown (optional)       │
+└─────────────────────────────┴──────────────────────────────┘
 ```
-
 ---
 
 ## 📁 Project Structure
@@ -61,19 +94,21 @@ JSON Report / Azure Tag Update
 azure-automation-tools/
 │
 ├── automation/
-│   ├── all_vm_metrics.py          # Scan all VMs and generate report
-│   └── tag_vm_optimization.py    # Analyze and tag VMs
+│   ├── all_vm_metrics.py
+│   ├── tag_vm_optimization.py
+│   ├── shutdown_idle_vms.py
+│   └── format_telegram_message.py
 │
 ├── core/
-│   ├── azure_clients.py          # Azure SDK clients
-│   ├── config.py                 # Environment configuration
-│   ├── metrics.py                # CPU analysis logic
-│   └── tagging.py                # Tagging logic
+│   ├── azure_clients.py
+│   ├── config.py
+│   ├── metrics.py
+│   ├── tagging.py
+│   ├── vm_actions.py
+│   └── reporting.py
 │
-├── architecture/
-├── monitoring/
-├── cost-management/
-├── infrastructure/
+├── .github/workflows/
+│   └── azure_automation.yml
 │
 ├── .env.example
 ├── requirements.txt
@@ -89,78 +124,90 @@ azure-automation-tools/
 2. Create ```.env```
    Copy ```env.example``` and update with your values:
    ```bash
-   AZURE_SUBSCRIPTION_ID=your-subscription-id-here
-   DRY_RUN=false
-   CPU_LOOKBACK_MINUTES=30
+    AZURE_SUBSCRIPTION_ID=your-subscription-id
+    DRY_RUN=true
+    CPU_LOOKBACK_MINUTES=30
+    MIN_SAMPLE_COUNT=10
+    PROTECTION_TAG_NAME=doNotShutdown
+    PROTECTION_TAG_VALUE=true
    ```
 3. Authenticate to Azure
    ```bash
    az login
    ```
 4. Run
-   Generate utilization report
+
    ```bash
-   python3 -m automation.all_vm_metrics
+   python3 -m automation.shutdown_idle_vms
    ```
-   Analyze and tag VMs
-   ```bash
-   python3 -m automation.tag_vm_optimization
-   ```
+   
+## ⚙️ GitHub Actions Setup
+
+Required Secrets
+```text
+AZURE_CREDENTIALS
+AZURE_SUBSCRIPTION_ID
+TELEGRAM_BOT_TOKEN
+TELEGRAM_CHAT_ID
+```
 
 ## 📊 Example Output
 
 ```bash
-Found 1 VM(s).
-
 Analyzing VM: test-vm-automation
-  Samples: 30
-  Avg CPU: 0.46
+  Samples: 24
+  Avg CPU: 3.88
   Status: IDLE
-
-[UPDATED] Tagged VM 'test-vm-automation' with optimizationStatus=idle
+  Decision: SHUTDOWN CANDIDATE
 ```
 
 ## 📄 Example Report
 
 ```bash
 {
-  "generated_at_utc": "2026-04-17T09:53:47.620708",
-  "vm_count": 1,
-  "vms": [
-    {
-      "vm_name": "test-vm-automation",
-      "average_cpu_percent": 0.46,
-      "sample_count": 30,
-      "status": "IDLE",
-      "recommendation": "Candidate for shutdown or scheduling."
-    }
-  ]
+  "vm_name": "test-vm-automation",
+  "average_cpu_percent": 3.88,
+  "sample_count": 24,
+  "status": "IDLE",
+  "decision": "SHUTDOWN CANDIDATE",
+  "dry_run": false
 }
 ```
+
+## 🔒 Safety Mechanisms
+
+- Dry-run mode (```DRY_RUN=true```)
+- Protection tag override (```doNotShutdown=true```)
+- Minimum sample validation
+- Separation of decision and execution logic
 
 ## 🧠 Key Concepts Demonstrated
 
 - Azure SDK integration
 - Azure Monitor metrics querying
 - Infrastructure utilization analysis
-- FinOps-style cost optimization logic
-- Safe automation with dry-run capability
-- Modular Python project structure
+- FinOps-style cost optimization
+- CI/CD-driven automation (GitHub Actions)
+- Safe automation patterns (dry-run + override)
+- Modular Python architecture
 
 ## 🔮 Future Improvements
 
-- Support additional metrics (memory, disk, network)
-- Add scheduled execution (Azure Functions / GitHub Actions)
-- Implement safe auto-shutdown workflows for idle VMs
-- Add dashboards or visualization layers
-- Integrate AI for anomaly detection and recommendations
+- Session-aware analysis (since last boot)
+- Multi-run confirmation before shutdown
+- Time-based policies (e.g. off-hours shutdown)
+- Support for additional metrics (memory, disk, network)
+- Dashboard / visualization layer
+- Migration to serverless (Azure Functions)
+- AI-based anomaly detection
 
 ## 🎯 Goal
 
 To build production-style Azure automation tools while strengthening skills in:
 
 - Cloud engineering
-- DevOps practices
+- DevOps & CI/CD
 - Infrastructure automation
+- Observability & FinOps
 - AI-assisted operations
    
