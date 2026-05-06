@@ -1,0 +1,21 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "value": "malaysiawest"
+    },
+    "vmName": {
+      "value": "test-vm-automation"
+    },
+    "adminUsername": {
+      "value": "azureuser"
+    },
+    "vmSize": {
+      "value": "Standard_B1ls"
+    },
+    "sshPublicKey": {
+      "value": "PASTE_YOUR_SSH_PUBLIC_KEY_HERE"
+    }
+  }
+}
