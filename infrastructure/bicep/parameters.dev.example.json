@@ -15,7 +15,7 @@
       "value": "Standard_B1ls"
     },
     "sshPublicKey": {
-      "value": "PASTE_YOUR_SSH_PUBLIC_KEY_HERE"
+      "value": "REPLACE_WITH_SSH_PUBLIC_KEY"
     }
   }
 }
